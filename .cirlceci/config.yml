@@ -1,0 +1,26 @@
+version: 1.0
+x-setup-npm: &setup-npm
+  name: Setup NPM
+  command: |-
+    echo $'@contentful:registry=https://registry.npmjs.org/
+    //registry.npmjs.org/:_authToken=${NPM_TOKEN}' >> ~/.npmrc
+x-context: &context
+  context: semantic-release-js
+jobs:
+  semantic-release:
+    docker:
+      - image: circleci/node:16
+    steps:
+      - checkout
+      - run:
+          <<: *setup-npm
+      - run: npm ci
+      - run:
+          name: Semantic Release
+          command: npx semantic-release --debug
+workflows:
+  version: 2
+  npm-release:
+    jobs:
+      - semantic-release:
+          <<: *context

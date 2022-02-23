@@ -3,7 +3,7 @@
   "version": "0.0.3",
   "description": "Fetch marketo forms data to gatsby project",
   "main": "gatsby-node.js",
-  "author": "jonny22094",
+  "author": "Contentful",
   "license": "MIT",
   "dependencies": {
     "gatsby-node-helpers": "^0.3.0",

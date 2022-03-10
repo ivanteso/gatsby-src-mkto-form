@@ -3,19 +3,19 @@ const fetch = require('node-fetch');
 const queryString = require('query-string');
 
 const { createNodeFactory } = createNodeHelpers({
-  typePrefix: `Marketo`
+  typePrefix: `Marketo`,
 });
 
 async function authenticate(authUrl) {
-    const res = await fetch(authUrl, {});
+  const res = await fetch(authUrl, {});
 
-    if (res.ok) {
-      const {access_token} = await res.json();
+  if (res.ok) {
+    const { access_token } = await res.json();
 
-      return access_token
-    } else {
-      throw new Error('Wrong credentials');
-    }
+    return access_token;
+  } else {
+    throw new Error('Wrong credentials');
+  }
 }
 
 exports.sourceNodes = async ({ actions, createNodeId }, configOptions) => {
@@ -24,7 +24,7 @@ exports.sourceNodes = async ({ actions, createNodeId }, configOptions) => {
   const authOptions = queryString.stringify({
     grant_type: 'client_credentials',
     client_id: clientId,
-    client_secret: clientSecret
+    client_secret: clientSecret,
   });
 
   const formsApiUrl = `https://${munchkinId}.mktorest.com/rest/asset/v1/forms.json?maxReturn=200`;
@@ -34,31 +34,39 @@ exports.sourceNodes = async ({ actions, createNodeId }, configOptions) => {
     const accessToken = await authenticate(authUrl);
 
     const forms = await fetch(formsApiUrl, {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    }).then(response => response.json());
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then((response) => response.json())
+      .catch((error) => {
+        console.error('Error trying to fetch the forms >>>> ', error);
+      });
 
     async function fetchFormFields(id) {
       const url = `https://${munchkinId}.mktorest.com/rest/asset/v1/form/${id}/fields.json`;
 
       const results = await fetch(url, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      }).then(res => res.json());
-
-      return results;
-    };
-
-    await Promise.all(
-      forms.result.map(async form => {
-        const {result: children} = await fetchFormFields(form.id);
-        const Form = createNodeFactory('Form')({
-          ...form,
-          children
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+        .then((res) => res.json())
+        .catch((error) => {
+          console.error('Error trying to fetch the form fields >>>> ', error);
         });
 
-        createNode(Form)
+      return results;
+    }
+
+    await Promise.all(
+      forms.result.map(async (form) => {
+        const { result: children } = await fetchFormFields(form.id);
+        const Form = createNodeFactory('Form')({
+          ...form,
+          children,
+        });
+
+        createNode(Form);
       })
     );
   } catch (err) {
-    console.error("gatsby-source-marketo-forms:", err.message)
+    console.error('gatsby-source-marketo-forms:', err.message);
   }
-}
+};

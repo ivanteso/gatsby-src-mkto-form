@@ -36,7 +36,10 @@ exports.sourceNodes = async ({ actions, createNodeId }, configOptions) => {
     const forms = await fetch(formsApiUrl, {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
-      .then((response) => response.json())
+      .then((response) => {
+        console.info('All form ids correctly fetched');
+        return response.json();
+      })
       .catch((error) => {
         console.error('Error trying to fetch the forms >>>> ', error);
       });
@@ -47,9 +50,15 @@ exports.sourceNodes = async ({ actions, createNodeId }, configOptions) => {
       const results = await fetch(url, {
         headers: { Authorization: `Bearer ${accessToken}` },
       })
-        .then((res) => res.json())
+        .then((res) => {
+          console.log('Fields correctly fetched for the form with the id ', id);
+          return res.json();
+        })
         .catch((error) => {
-          console.error('Error trying to fetch the form fields >>>> ', error);
+          console.error(
+            `Error trying to fetch the form id ${id} fields >>>> `,
+            error
+          );
         });
 
       return results;
@@ -65,7 +74,16 @@ exports.sourceNodes = async ({ actions, createNodeId }, configOptions) => {
 
         createNode(Form);
       })
-    );
+    )
+      .then(() => {
+        console.info('Form and fields successfully fetched');
+      })
+      .catch((error) => {
+        console.error(
+          'Error during the Promise.all phase >>>> ',
+          error.message
+        );
+      });
   } catch (err) {
     console.error('gatsby-source-marketo-forms:', err.message);
   }

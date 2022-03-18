@@ -68,9 +68,7 @@ exports.sourceNodes = async ({ actions, createNodeId }, configOptions) => {
 
     await Promise.all(
       forms.result.map(async (form) => {
-        console.info('Creating the form node for >>>> ', form);
         const { result: children } = await fetchFormFields(form.id);
-        console.info('Fields fetched >>>> ', children);
         const Form = createNodeFactory('Form')({
           ...form,
           children,

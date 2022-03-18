@@ -73,7 +73,12 @@ exports.sourceNodes = async ({ actions, createNodeId }, configOptions) => {
           ...form,
           children,
         });
-        console.info('Node created >>>> ', Form);
+        console.info(
+          'Node created for form ID >>>> : ',
+          Form.id,
+          ' <<<< Name >>>> ',
+          Form.name
+        );
 
         createNode(Form);
       })

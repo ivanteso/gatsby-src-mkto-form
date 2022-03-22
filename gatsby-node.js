@@ -2,6 +2,31 @@ const createNodeHelpers = require('gatsby-node-helpers').default;
 const fetch = require('node-fetch');
 const queryString = require('query-string');
 
+const wait = (ms) => new Promise((res) => setTimeout(res, ms));
+
+const callWithRetry = async (fn, depth = 0) => {
+  try {
+    console.info(
+      `Correctly calling the function during the attempt number ${depth + 1}`
+    );
+    return await fn();
+  } catch (e) {
+    if (depth > 5) {
+      console.error('Attempt limit reached, impossible to fetch');
+      throw e;
+    }
+    console.error(e);
+    console.info(
+      `Impossible to fetch the data during the attempt number ${
+        depth + 1
+      }, trying again in ${20 + 10 * depth}s`
+    );
+    await wait(20000 + 10000 * depth);
+
+    return callWithRetry(fn, depth + 1);
+  }
+};
+
 const { createNodeFactory } = createNodeHelpers({
   typePrefix: `Marketo`,
 });
@@ -37,14 +62,14 @@ exports.sourceNodes = async ({ actions, createNodeId }, configOptions) => {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
       .then((response) => {
-        console.info('All form ids correctly fetched');
+        console.info('All forms correctly fetched');
         return response.json();
       })
       .catch((error) => {
         console.error('Error trying to fetch the forms >>>> ', error);
       });
 
-    console.info('here are the forms fetched', forms);
+    console.info('Here are the forms fetched >>>>', forms);
 
     async function fetchFormFields(id) {
       const url = `https://${munchkinId}.mktorest.com/rest/asset/v1/form/${id}/fields.json`;
@@ -68,7 +93,9 @@ exports.sourceNodes = async ({ actions, createNodeId }, configOptions) => {
 
     await Promise.all(
       forms.result.map(async (form) => {
-        const { result: children } = await fetchFormFields(form.id);
+        const { result: children } = await callWithRetry(() =>
+          fetchFormFields(form.id)
+        );
         const Form = createNodeFactory('Form')({
           ...form,
           children,
